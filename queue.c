@@ -15,26 +15,6 @@
     struct linked_list data;
   };*/
 
-//serialze on the tile layout
-//inpmlemented to try and reduce timing out
-uint64_t serialize_tiles(struct game_state state)
-{
-    //iniialze reuslt to hold serialzied value
-    uint64_t result = 0;
-    //loop through grid
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            //shift the result by 4 to make room for the next tile
-            result <<= 4;
-            //use bitwaise or to add tile balue
-            //the & 0xF ensure that the valeuf stays within 0-15 or 4 bits
-            result |= (uint64_t)(state.tiles[i][j] & 0xF);
-        }
-    }
-    return result;
-}
 
 //set the bit at the index index in the puzzle
 void set_complete(uint8_t *map, uint64_t index)
@@ -114,7 +94,7 @@ int number_of_moves(struct game_state start)
     }
 
     //serialze the starting state
-    uint64_t startIdx = serialize_tiles(start) % SIZE;
+    uint64_t startIdx = serialize(start) % SIZE;
     //uint64_t startIdx = startSer % SIZE;
     //mark it as complete
     set_complete(complete, startIdx);
@@ -123,7 +103,7 @@ int number_of_moves(struct game_state start)
     //steps[completeCnt++] = 0;
 
     //serrialze the start tile
-    //uint64_t startSer = serialize_tiles(start);
+    //uint64_t startSer = serialize(start);
     //set the steps at this point to be 0
     //steps[0] = 0;
     //set the tile that startSer is at to be completed
@@ -144,7 +124,7 @@ int number_of_moves(struct game_state start)
         //dequeue the tile to get the next tile
         struct game_state cur = dequeue(&q);
         //serilizate the current tile
-        uint64_t currentInt = serialize_tiles(cur) % SIZE;
+        uint64_t currentInt = serialize(cur) % SIZE;
         cur.num_steps = steps[currentInt];
 
 
@@ -225,14 +205,14 @@ int number_of_moves(struct game_state start)
                 continue;
             }
 
-            uint64_t nextInt = serialize_tiles(next) % SIZE;
+            uint64_t nextInt = serialize(next) % SIZE;
             if (isComplete(complete, nextInt))
             {
                 continue;
             }
             set_complete(complete, nextInt);
             //track the steps to get to this tile
-            steps[nextInt] = next.num_steps + 1;
+            steps[nextInt] = next.num_steps;
             //add to BFS queue
             //enqueue(&q, child);
             enqueue(&q, next);
