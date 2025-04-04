@@ -23,7 +23,7 @@ struct game_state dequeue(struct queue *q)
     //reomve tail or head use the one that is contrery to enqueue
     //thus will reomve head
     size_t remove = remove_from_head(&q->data);
-    if (remove == 0)
+    if (!q->data.head)
     {
         struct game_state invalid = {0};
         return invalid; 
@@ -62,7 +62,7 @@ int number_of_moves(struct game_state start)
     */
     //start with an empty queue
     //queue q = new_queue();
-    struct queue q;
+    struct queue q = {0};
 
     q.data.head = NULL;
 
@@ -86,9 +86,10 @@ int number_of_moves(struct game_state start)
     //enqueue(&q, child);
     enqueue(&q, start);
 
-    fprintf(stderr, "enqueued start state\n");
-    fflush(stderr);
-
+    dequeue(&q);
+    //fprintf(stderr, "enqueued start state\n");
+    //fflush(stderr);
+    /*
     uint64_t startSer = serialize(start);
     uint64_t startIdx = startSer % MAX;
     steps[startIdx] = 0;
@@ -209,7 +210,7 @@ int number_of_moves(struct game_state start)
             uint64_t nextSer = serialize(nextCur);
             uint64_t nextIdx = nextSer % MAX;
 
-            if (next < 65536 && !complete[nextIdx])
+            if (nextIdx < 65536 && !complete[nextIdx])
             {
                 //incrmeent the num of moves taken to try to solve
                 steps[nextIdx] = cur.num_steps + 1;
@@ -225,5 +226,6 @@ int number_of_moves(struct game_state start)
     free_list(q.data);
 
     //return -1 to insicate that the tile puzzle cannot be solved
-    return -1;
+    return -1;*/
+    return 0;
 }

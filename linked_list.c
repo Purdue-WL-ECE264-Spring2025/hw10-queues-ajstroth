@@ -161,17 +161,6 @@ size_t remove_from_tail(struct linked_list *list)
   //create node to keep lasy node so we van use ->next to get rid of the tial value
   struct list_node *ptrLast = NULL;
 
-  //opne element case
-  if (ptrLast == NULL)
-  {
-    //the head will be null
-    list->head = NULL;
-  }
-  else
-  {
-    ptrLast->next = NULL;
-  }
-
   //do the same traveralsal thing through the list to find the last value
   //if it is not empty have to find the last node
   //go through all the nodes in the list
