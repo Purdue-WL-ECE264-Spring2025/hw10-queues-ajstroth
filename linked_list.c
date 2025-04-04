@@ -118,8 +118,6 @@ size_t remove_from_head(struct linked_list *list)
     return 0;
   }
 
-  fprintf(stderr, "remove_from_head(): removing %zu\n", list);
-  fflush(stderr);
 
   struct list_node *headNode = list->head;
   size_t valueHead = headNode->value;

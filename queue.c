@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#define MAX 1000000
+
 
 //added here for easier reference
 /*struct queue {
@@ -60,16 +62,18 @@ int number_of_moves(struct game_state start)
     */
     //start with an empty queue
     //queue q = new_queue();
-    struct queue q = {0};
+    struct queue q;
+
+    q.data.head = NULL;
 
     //serialize the starting state 
-    uint64_t startSer = serialize(start);
+    //uint64_t startSer = serialize(start);
 
     //initial tracking things
     //allocate memory for an array of bools to store if the tile has been moved
     //did 16^4
-    bool *complete = calloc(65536, sizeof(bool));
-    uint64_t *steps = calloc(65536, sizeof(uint64_t));
+    bool *complete = calloc(MAX, sizeof(bool));
+    uint64_t *steps = calloc(MAX, sizeof(uint64_t));
 
     //if memory allocation failrs
     if (!complete || !steps)
@@ -85,39 +89,41 @@ int number_of_moves(struct game_state start)
     fprintf(stderr, "enqueued start state\n");
     fflush(stderr);
 
+    uint64_t startSer = serialize(start);
+    uint64_t startIdx = startSer % MAX;
+    steps[startIdx] = 0;
+
     //initiales step to 0
-    steps[startSer] = 0;
+    //steps[startSer] = 0;
+
+    fprintf(stderr, "enqueued start state2\n");
+    fflush(stderr);
 
     //while (!empty(s))
     while (q.data.head)
     {
+        fprintf(stderr, "entered loop\n");
+        fflush(stderr);
         //node cur = dequeue(&q);
         //dequeue the current state
         struct game_state cur = dequeue(&q);
         //serilizate the current state
-        size_t current = serialize(cur);
+        uint64_t currentSer = serialize(cur);
+        uint64_t currentIdx = currentSer % MAX;
 
-        fprintf(stderr, "serilzed value: %zu\n", current);
+        fprintf(stderr, "entered loop2\n");
         fflush(stderr);
-
-        if (current >= 65536)
-        {
-            fprintf(stderr, "output bound serilzed value: %zu\n", current);
-            fflush(stderr);
-            continue;
-        }
-
         //test to see if the tile had already been seen or meoved
-        if (complete[current])
+        if (complete[currentIdx])
         {
             //if it has already been visited move to the next tile
             continue;
         }
 
         //mark the tile as being visited
-        complete[current] = true;
+        complete[currentIdx] = true;
         //update the numver of steps
-        cur.num_steps = steps[current];
+        cur.num_steps = steps[currentIdx];
 
         //have to determine if the tile puzzle is solved
         //assume that the puzzle is solved
@@ -153,8 +159,8 @@ int number_of_moves(struct game_state start)
                     {
                         solved = false;
                     }
+                    value++;
                 }
-                value++;
             }
         }
         
@@ -200,12 +206,13 @@ int number_of_moves(struct game_state start)
             nextCur.empty_col = newCol;
 
             //seriable the next integer and set it to next
-            uint64_t next = serialize(nextCur);
+            uint64_t nextSer = serialize(nextCur);
+            uint64_t nextIdx = nextSer % MAX;
 
-            if (!complete[next])
+            if (next < 65536 && !complete[nextIdx])
             {
                 //incrmeent the num of moves taken to try to solve
-                steps[next] = cur.num_steps + 1;
+                steps[nextIdx] = cur.num_steps + 1;
                 enqueue(&q, nextCur);
             }
         }
