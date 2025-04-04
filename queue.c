@@ -38,7 +38,8 @@ struct game_state dequeue(struct queue *q)
 //find the minum number of moves to solve
 int number_of_moves(struct game_state start) 
 {
-    fprintf(stderr, "straing number_of_moves\n");
+    fprintf(stderr, "empty tile at: (%d, %d)\n", start.empty_row, start.empty_col);
+    fprintf(stderr, "tile at that positons: %d\n", start.tiles[start.empty_row][start.empty_col]);
     fflush(stderr);
     //want to follow this structr BFS
     /*
@@ -86,10 +87,10 @@ int number_of_moves(struct game_state start)
     //enqueue(&q, child);
     enqueue(&q, start);
 
-    dequeue(&q);
+    //dequeue(&q);
     //fprintf(stderr, "enqueued start state\n");
     //fflush(stderr);
-    /*
+    
     uint64_t startSer = serialize(start);
     uint64_t startIdx = startSer % MAX;
     steps[startIdx] = 0;
@@ -226,6 +227,6 @@ int number_of_moves(struct game_state start)
     free_list(q.data);
 
     //return -1 to insicate that the tile puzzle cannot be solved
-    return -1;*/
-    return 0;
+    return -1;
+    //return 0;
 }
