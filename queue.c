@@ -5,7 +5,7 @@
 
 //max number of states for consistent in number of moves
 #define MAX 1000000
-#define SIZE (1ULL < 24)
+#define SIZE (1ULL << 24)
 
 
 //added here for easier reference
@@ -37,12 +37,16 @@ uint64_t serialize_tiles(struct game_state state)
 //set the bit at the index index in the puzzle
 void set_complete(uint8_t *map, uint64_t index)
 {
+    //calculate which byte contains the bit
+    //use bitwise or to set the bit at potion
     map[index / 8] |= (1 << (index % 8));
 }
 
 //check if the inedx index is already set
 bool isComplete(uint8_t *map, uint64_t index)
 {
+    //check the bit at postion (index % 8) in the byta at (index /8)
+    //does bitwise and if the result is not zero than the bit is set
     return map[index / 8] & (1 << (index % 8));
 }
 
@@ -92,11 +96,11 @@ int number_of_moves(struct game_state start)
     q.data.head = NULL;
 
     //alocate memory to track completes tiles
-    uint64_t *complete = calloc(SIZE / 8, sizeof(uint8_t));
+    uint8_t *complete = calloc(SIZE / 8, sizeof(uint8_t));
     //alocate memory to track step taken to solve
-    uint64_t *steps = calloc(MAX, sizeof(uint64_t));
+    uint64_t *steps = calloc(SIZE, sizeof(uint64_t));
     //track the number of completes tiles
-    size_t completeCnt = 0;
+    //size_t completeCnt = 0;
 
     //if memory allocation failrs
     if (!complete || !steps)
@@ -108,12 +112,13 @@ int number_of_moves(struct game_state start)
     }
 
     //serialze the starting state
-    uint64_t startSer = serialize_tiles(start) % SIZE;
+    uint64_t startSer = serialize_tiles(start);
+    uint64_t startIdx = startSer % SIZE;
     //mark it as complete
-    set_complete(complete, startSer);
-
+    set_complete(complete, startIdx);
+    steps[startIdx] = 0;
     //initiaze BFS with starting start
-    steps[completeCnt++] = 0;
+    //steps[completeCnt++] = 0;
 
     //serrialze the start tile
     //uint64_t startSer = serialize_tiles(start);
@@ -135,12 +140,13 @@ int number_of_moves(struct game_state start)
         struct game_state cur = dequeue(&q);
         //serilizate the current tile
         uint64_t currentInt = serialize_tiles(cur) % SIZE;
+        cur.num_steps = steps[currentInt];
 
         //should always be true sicnce it is already set
-        if (!isComplete(complete, currentInt))
-        {
-            continue;
-        }
+        //if (!isComplete(complete, currentInt))
+        //{
+          //  continue;
+        //}
 
         //i think this is the loop causing erros, so remove
         /*//set tseen to be fale
@@ -172,7 +178,7 @@ int number_of_moves(struct game_state start)
         }*/
 
         //set the current number of steps to be the number of steps at the stepIdz for currentInt
-        cur.num_steps = steps[completeCnt - 1];
+        //cur.num_steps = steps[completeCnt - 1];
 
         //have to determine if the tile puzzle is solved
         //assume that the puzzle is solved
@@ -259,18 +265,19 @@ int number_of_moves(struct game_state start)
             nextCur.empty_col = newCol;
 
             //seriable the next integer and set it to next
-            uint64_t nextInt = serialize_tiles(nextCur) % SIZE;
+            uint64_t nextSer = serialize_tiles(nextCur) % SIZE;
+            uint64_t nextInt = nextSer % SIZE;
             //uint64_t nextIdx = nextInt % MAX;
 
-            if (isComplete(nextInt))
+            if (isComplete(complete, nextInt))
             {
                 continue;
             }
 
-            if (completeCnt >= MAX)
-            {
-                continue;
-            }
+            //if (completeCnt >= MAX)
+            //{
+             //   continue;
+            //}
             //i think this loop could also be an issue
             //check to see if the file has already been seen
             /*bool completeAlready = false;
@@ -300,7 +307,7 @@ int number_of_moves(struct game_state start)
 
             set_complete(complete, nextInt);
             //track the steps to get to this tile
-            steps[completeCnt++] = cur.num_steps + 1;
+            steps[nextInt] = cur.num_steps + 1;
             //add to BFS queue
             //enqueue(&q, child);
             enqueue(&q, nextCur);
