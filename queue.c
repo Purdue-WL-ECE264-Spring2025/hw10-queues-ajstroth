@@ -4,7 +4,9 @@
 #include <stdlib.h>
 
 //max number of states for consistent in number of moves
-#define MAX 1000000
+//#define MAX 1000000
+//want to be an unsigned long not inrger to prevent overflows
+//Size = 2^24S
 #define SIZE (1ULL << 24)
 
 
@@ -112,8 +114,8 @@ int number_of_moves(struct game_state start)
     }
 
     //serialze the starting state
-    uint64_t startSer = serialize_tiles(start);
-    uint64_t startIdx = startSer % SIZE;
+    uint64_t startIdx = serialize_tiles(start) % SIZE;
+    //uint64_t startIdx = startSer % SIZE;
     //mark it as complete
     set_complete(complete, startIdx);
     steps[startIdx] = 0;
@@ -131,6 +133,9 @@ int number_of_moves(struct game_state start)
     //add starting tile to queue
     enqueue(&q, start);
 
+    void (*moves[4])(struct game_state *) = {
+        move_up, move_down, move_left, move_right
+    };
     //while (!empty(s))
     //BfS loop
     while (q.data.head)
@@ -142,40 +147,6 @@ int number_of_moves(struct game_state start)
         uint64_t currentInt = serialize_tiles(cur) % SIZE;
         cur.num_steps = steps[currentInt];
 
-        //should always be true sicnce it is already set
-        //if (!isComplete(complete, currentInt))
-        //{
-          //  continue;
-        //}
-
-        //i think this is the loop causing erros, so remove
-        /*//set tseen to be fale
-        //indicated wheter currentInt has been visited
-        bool seen = false;
-        //create indicy of currentInt to be 0
-        size_t stepIdx = 0;
-
-        //check is current tile has been seen begore
-        for (size_t i = 0; i < completeCnt; i++)
-        {
-            //if that tile is equal to currentSer than it has been seen
-            if (complete[i] == currentInt)
-            {
-                //seen seen to true
-                seen = true;
-                //the index of currentInt set to i where it has been seen incomplete
-                stepIdx = i;
-                //end loop
-                break;
-            }
-        }
-
-        //if the current tile hasnt been seen
-        if (!seen)
-        {
-            //move on
-            continue;
-        }*/
 
         //set the current number of steps to be the number of steps at the stepIdz for currentInt
         //cur.num_steps = steps[completeCnt - 1];
@@ -234,83 +205,37 @@ int number_of_moves(struct game_state start)
 
 
         //moves in 4 direction
-        int dir[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        //int dir[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
         //iniialze rows and cols
-        int row = cur.empty_row;
-        int col = cur.empty_col;
+        //int row = cur.empty_row;
+        //int col = cur.empty_col;
 
         //attempt to move each direction
         for (int k = 0; k < 4; k++)
         {
-            int newRow = row + dir[k][0];
-            int newCol = col + dir[k][1];
             
-            //if it is out of bounds
-            if (newRow < 0 || newRow >= 4 || newCol < 0 || newCol >= 4)
+            struct game_state next = cur;
+            next.num_steps = cur.num_steps;
+
+            moves[k](&next);
+
+            if (next.num_steps == cur.num_steps)
             {
-                //move on to next k
                 continue;
             }
-            
-            //create next state to modify to aboid actually changing the current state
-            struct game_state nextCur = cur;
 
-            //swap the 0 with the neighboring tile
-            nextCur.tiles[row][col] = nextCur.tiles[newRow][newCol];
-            nextCur.tiles[newRow][newCol] = 0;
-
-            //update the position of the blank tile o tile
-            nextCur.empty_row = newRow;
-            nextCur.empty_col = newCol;
-
-            //seriable the next integer and set it to next
-            uint64_t nextSer = serialize_tiles(nextCur) % SIZE;
-            uint64_t nextInt = nextSer % SIZE;
-            //uint64_t nextIdx = nextInt % MAX;
-
+            uint64_t nextInt = serialize_tiles(next) % SIZE;
             if (isComplete(complete, nextInt))
             {
                 continue;
             }
-
-            //if (completeCnt >= MAX)
-            //{
-             //   continue;
-            //}
-            //i think this loop could also be an issue
-            //check to see if the file has already been seen
-            /*bool completeAlready = false;
-            for (size_t i = 0; i < completeCnt; i++)
-            {
-                //if the next inteerger has been seen
-                if(complete[i] == nextInt)
-                {
-
-                    //set to true 
-                    completeAlready = true;
-                    //end loop
-                    break;
-                }
-            }
-
-            //if the tile hasnt been seen
-            if (!completeAlready)
-            {
-                //if the count is greater than the max
-                if (completeCnt >= MAX)
-                {
-                    //move on
-                    continue;
-                }
-            }*/
-
             set_complete(complete, nextInt);
             //track the steps to get to this tile
-            steps[nextInt] = cur.num_steps + 1;
+            steps[nextInt] = next.num_steps + 1;
             //add to BFS queue
             //enqueue(&q, child);
-            enqueue(&q, nextCur);
+            enqueue(&q, next);
         }
     }
     
