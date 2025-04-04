@@ -40,10 +40,16 @@ bool sameLayout(struct game_state *a, struct game_state *b)
 //serialate the layout helper function
 uint64_t serializeLayout(struct game_state state)
 {
+    //creates copu of num_steps
     uint64_t stepsCopy = state.num_steps;
+    //temp set num_steps to 0
+    //dosnt show hpw many steps have been taken
     state.num_steps = 0;
+    //serilize the modified state with num_steps =0
     uint64_t result = serialize(state);
+    //resotre orginal num_steps value
     state.num_steps = stepsCopy;
+    //return serialzed layout
     return result;
 }
 
@@ -133,38 +139,9 @@ int number_of_moves(struct game_state start)
 
     q.data.head = NULL;
 
+    //inialize a linked list to keep track of what has already been seen
+
     struct linked_list seenStates = {0};
-
-    //alocate memory to track completes tiles
-
-    //uint64_t *complete = calloc(MAX, sizeof(uint64_t));
-
-    //track the number of completes tiles
-
-    //size_t completeCnt = 0;
-
-    //alocate memory to track step taken to solve
-
-    //uint64_t *steps = calloc(MAX, sizeof(uint64_t));
-
-
-    //if memory allocation failrs
-
-    //if (!complete || !steps)
-
-    //{
-
-        //free memory
-
-      //  free(complete);
-
-     //   free(steps);
-
-        //return -1 which indicates fail to solve
-
-//        return -1;
-//
-  //  }
 
 
     //enqueue(&q, child);
@@ -172,22 +149,9 @@ int number_of_moves(struct game_state start)
     //add starting tile to queue
 
     enqueue(&q, start);
-
+    
+    //add serialed layour of the starting state to the seen list
     insert_at_tail(&seenStates, serializeLayout(start));
-
-
-    //serrialze the start tile
-
-    //uint64_t startSer = serialize(start);
-
-    //set the steps at this point to be 0
-
-    //steps[0] = 0;
-
-    //set the tile that startSer is at to be completed
-
-    //complete[completeCnt++] = startSer;
-
 
 
     //while (!empty(s))
@@ -203,69 +167,6 @@ int number_of_moves(struct game_state start)
         //dequeue the tile to get the next tile
 
         struct game_state cur = dequeue(&q);
-
-        //serilizate the current tile
-
-        //uint64_t currentInt = serialize(cur);
-
-
-        //set tseen to be fale
-
-        //indicated wheter currentInt has been visited
-
-        //bool solve = false;
-
-        //create indicy of currentInt to be 0
-
-        //size_t stepIdx = 0;
-
-
-        //check is current tile has been seen begore
-
-        /*for (size_t i = 0; i < completeCnt; i++)
-
-        {
-
-            //if that tile is equal to currentSer than it has been seen
-
-            if (complete[i] == currentInt)
-
-            {
-
-                //seen seen to true
-
-                seen = true;
-
-                //the index of currentInt set to i where it has been seen incomplete
-
-                stepIdx = i;
-
-                //end loop
-
-                break;
-
-            }
-
-        }
-
-
-        //if the current tile hasnt been seen
-
-        if (!seen)
-
-        {
-
-            //move on
-
-            continue;
-
-        }*/
-
-
-        //set the current number of steps to be the number of steps at the stepIdz for currentInt
-
-        //cur.num_steps = steps[stepIdx];
-
 
         //have to determine if the tile puzzle is solved
 
@@ -354,8 +255,6 @@ int number_of_moves(struct game_state start)
 
             free_list(seenStates);
 
-            //free(steps);
-
             //use free_list to free q.data
 
             free_list(q.data);
@@ -369,8 +268,8 @@ int number_of_moves(struct game_state start)
 
 
         //moves in 4 direction
-
-
+        //4 possible moves to be made
+        //easier to do this so it can be looped through
         void (* moves[4])(struct game_state *) = {
             move_up, move_down, move_left, move_right
         };
@@ -380,16 +279,18 @@ int number_of_moves(struct game_state start)
         for (int k = 0; k < 4; k++)
 
         {
-
+            //copy the current state to change
             struct game_state nextCur = cur;
-
+            //appy the move to the copied state
             moves[k](&nextCur);
 
+            //if the move was invalid move on
             if (nextCur.empty_row == cur.empty_row && nextCur.empty_col == cur.empty_col)
             {
                 continue;
             }
 
+            //serialize the layour of the new state
             uint64_t layout = serializeLayout(nextCur);
 
 
@@ -397,73 +298,29 @@ int number_of_moves(struct game_state start)
 
             bool completeAlready = false;
 
+            //start the loop with a pointer node intialzed to the head of seenstates
+            //contintue to loop will node is not NULL
+            //move tot ht next node
             for (struct list_node *node = seenStates.head; node != NULL; node = node->next)
             {
+                //if the current nodes value matches the laupur
                 if (node->value == layout)
                 {
+                    //if the match is found it means that the layour has already been seen
                     completeAlready = true;
+                    //end loop
                     break;
                 }
             }
 
+            //if the syaye has already been seen move on
             if (completeAlready)
             {
                 continue;
             }
 
-            /*for (size_t i = 0; i < completeCnt; i++)
 
-            {
-
-                //if the next inteerger has been seen
-
-                if(complete[i] == nextInt)
-
-                {
-
-
-                    //set to true 
-
-                    completeAlready = true;
-
-                    //end loop
-
-                    break;
-
-                }
-
-            }
-
-
-            //if the tile hasnt been seen
-
-            if (!completeAlready)
-
-            {
-
-                //if the count is greater than the max
-
-                if (completeCnt >= MAX)
-
-                {
-
-                    //move on
-
-                    continue;
-
-                }
-
-            }*/
-
-
-            //track the steps to get to this tile
-
-            //steps[completeCnt] = nextCur.num_steps;
-
-            //mark the start as seen
-
-            //complete[completeCnt++] = nextInt;
-
+            //add the new layout to the list of seen states
             insert_at_tail(&seenStates, layout);
 
             //add to BFS queue
@@ -481,8 +338,6 @@ int number_of_moves(struct game_state start)
     //if no solution is found
 
     //free memory
-
-    //free(complete);
 
     free_list(seenStates);
 
