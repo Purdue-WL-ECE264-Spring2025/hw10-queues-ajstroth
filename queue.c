@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#define MAX 1000000
+#define MAX (1 << 22)
 
 
 //added here for easier reference
@@ -23,15 +23,6 @@ struct game_state dequeue(struct queue *q)
     //reomve tail or head use the one that is contrery to enqueue
     //thus will reomve head
     size_t remove = remove_from_head(&q->data);
-    if (!q->data.head)
-    {
-        struct game_state invalid = {0};
-        return invalid; 
-    }
-
-    //destialize the valye and then return it
-    fprintf(stderr, "Dequeing value : %zu\n", remove);
-    fflush(stderr);
     return deserialize(remove);
 }
 
@@ -127,6 +118,9 @@ int number_of_moves(struct game_state start)
         //update the numver of steps
         cur.num_steps = steps[currentIdx];
 
+        fprintf(stderr, "currentIdx %lu\n", currentIdx);
+        fprintf(stderr, "currentSer %lu\n", currentSer);
+
         //have to determine if the tile puzzle is solved
         //assume that the puzzle is solved
         bool solved = true;
@@ -217,6 +211,9 @@ int number_of_moves(struct game_state start)
                 steps[nextIdx] = cur.num_steps + 1;
                 enqueue(&q, nextCur);
             }
+
+            fprintf(stderr, "currentIdx %lu\n", nextIdx);
+            fprintf(stderr, "currentSer %lu\n", nextSer);
         }
     }
     
