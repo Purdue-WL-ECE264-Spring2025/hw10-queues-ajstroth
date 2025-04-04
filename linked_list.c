@@ -57,17 +57,15 @@ void insert_at_tail(struct linked_list *list, size_t value)
   //make sure that the node was made correctly
   if (node == NULL)
   {
-    fprintf(stderr, "failed to allocate new node\n");
-    fflush(stderr);
     //check return value here
     return;
   }
   
+  //if there is an empty list
   if (list->head == NULL)
   {
+    //set the new notd to be head
     list->head = node;
-    fprintf(stderr, "inserted first node(head): %zu\n", value);
-    fflush(stderr);
     return;
   }
   //since tail is not a part of the structue like head is
@@ -76,17 +74,6 @@ void insert_at_tail(struct linked_list *list, size_t value)
   //create struct to help find last node
   //will start at the first not incase it is empty
   struct list_node *nodePtr = list->head;
-
-  /*
-  //if the list is empty the new node made is both the tail and the head
-  if (list->head == NULL || list->head == 0)
-  {
-    //set the node to the head because it is both the tail and the head
-    //but the head is a part of the structure so it is easier to set it to this value
-    list->head = node;
-    //check return value?????
-    return;
-  }*/
 
   //if it is not empty have to find the last node
   //go through all the nodes in the list
@@ -101,50 +88,31 @@ void insert_at_tail(struct linked_list *list, size_t value)
   //create a next node to attach the created node to
   nodePtr->next = node;
 
-  //check return value!!!!
-  //return;
-
-  fprintf(stderr, "instered at tail: %zu\n", value);
-  fflush(stderr);
 }
 
 size_t remove_from_head(struct linked_list *list) 
 { 
 
+  //if there is an empty list
   if (list->head == NULL)
   {
-    fprintf(stderr, "remove_from_head(): List is empty\n");
-    fflush(stderr);
+    //nothing to remove 
+    //retun 0  i think
+    //POSSIBLE ERROR AREA
     return 0;
   }
 
-
+  //grab the head node 
   struct list_node *headNode = list->head;
-  size_t valueHead = headNode->value;
+  //save the value of the head node
+  size_t valueHead = headNode->value; 
+  //set the new headnode to be the next node
   list->head = headNode->next;
+  //free memry
   free(headNode);
+  //return the balue of the previous head nnode not the new one
   return valueHead;
   
-  /*
-  //find the current head of the list
-  struct list_node *headNode = list->head;
-
-  //if the list is empty return nothing because there is nothing to remove
-  if (list->head == NULL || list->head == 0)
-  {
-    return 0;
-  }
-
-  //set the new head to the next node
-  list->head = headNode->next;
-  //store the value of the head node to a varibale to return
-  size_t valueHead = headNode->value;
-
-  //free the memory of the removed head node
-  free(headNode);
-
-  //return the head node value
-  return valueHead; */
 }
 
 size_t remove_from_tail(struct linked_list *list) 
@@ -153,7 +121,7 @@ size_t remove_from_tail(struct linked_list *list)
   struct list_node *nodePtr = list->head;
 
   //if the list is empty return nothing because there is nothing to remove
-  if (list->head == NULL || list->head == 0)
+  if (list->head == NULL)
   {
     return 0;
   }

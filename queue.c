@@ -3,7 +3,8 @@
 
 #include <stdlib.h>
 
-#define MAX (1 << 22)
+//max number of states for consistent in number of moves
+#define MAX 1000000
 
 
 //added here for easier reference
@@ -29,9 +30,6 @@ struct game_state dequeue(struct queue *q)
 //find the minum number of moves to solve
 int number_of_moves(struct game_state start) 
 {
-    fprintf(stderr, "empty tile at: (%d, %d)\n", start.empty_row, start.empty_col);
-    fprintf(stderr, "tile at that positons: %d\n", start.tiles[start.empty_row][start.empty_col]);
-    fflush(stderr);
     //want to follow this structr BFS
     /*
     node bfs(graph g, node start, node search)
@@ -53,73 +51,81 @@ int number_of_moves(struct game_state start)
     }
     */
     //start with an empty queue
+    //iniitalize queue
     //queue q = new_queue();
     struct queue q = {0};
-
+    //set the head of q to be null
     q.data.head = NULL;
 
-    //serialize the starting state 
-    //uint64_t startSer = serialize(start);
-
-    //initial tracking things
-    //allocate memory for an array of bools to store if the tile has been moved
-    //did 16^4
-    bool *complete = calloc(MAX, sizeof(bool));
+    //alocate memory to track completes tiles
+    uint64_t *complete = calloc(MAX, sizeof(uint64_t));
+    //track the number of completes tiles
+    size_t completeCnt = 0;
+    //alocate memory to track step taken to solve
     uint64_t *steps = calloc(MAX, sizeof(uint64_t));
 
     //if memory allocation failrs
     if (!complete || !steps)
     {
+        //free memory
         free(complete);
         free(steps);
+        //return -1 which indicates fail to solve
         return -1;
     }
 
     //enqueue(&q, child);
+    //add starting tile to queue
     enqueue(&q, start);
 
-    //dequeue(&q);
-    //fprintf(stderr, "enqueued start state\n");
-    //fflush(stderr);
-    
+    //serrialze the start tile
     uint64_t startSer = serialize(start);
-    uint64_t startIdx = startSer % MAX;
-    steps[startIdx] = 0;
+    //set the steps at this point to be 0
+    steps[0] = 0;
+    //set the tile that startSer is at to be completed
+    complete[completeCnt++] = startSer;
 
-    //initiales step to 0
-    //steps[startSer] = 0;
-
-    fprintf(stderr, "enqueued start state2\n");
-    fflush(stderr);
 
     //while (!empty(s))
+    //BfS loop
     while (q.data.head)
     {
-        fprintf(stderr, "entered loop\n");
-        fflush(stderr);
         //node cur = dequeue(&q);
-        //dequeue the current state
+        //dequeue the tile to get the next tile
         struct game_state cur = dequeue(&q);
-        //serilizate the current state
-        uint64_t currentSer = serialize(cur);
-        uint64_t currentIdx = currentSer % MAX;
+        //serilizate the current tile
+        uint64_t currentInt = serialize(cur);
 
-        fprintf(stderr, "entered loop2\n");
-        fflush(stderr);
-        //test to see if the tile had already been seen or meoved
-        if (complete[currentIdx])
+        //set tseen to be fale
+        //indicated wheter currentInt has been visited
+        bool seen = false;
+        //create indicy of currentInt to be 0
+        size_t stepIdx = 0;
+
+        //check is current tile has been seen begore
+        for (size_t i = 0; i < completeCnt; i++)
         {
-            //if it has already been visited move to the next tile
+            //if that tile is equal to currentSer than it has been seen
+            if (complete[i] == currentInt)
+            {
+                //seen seen to true
+                seen = true;
+                //the index of currentInt set to i where it has been seen incomplete
+                stepIdx = i;
+                //end loop
+                break;
+            }
+        }
+
+        //if the current tile hasnt been seen
+        if (!seen)
+        {
+            //move on
             continue;
         }
 
-        //mark the tile as being visited
-        complete[currentIdx] = true;
-        //update the numver of steps
-        cur.num_steps = steps[currentIdx];
-
-        fprintf(stderr, "currentIdx %lu\n", currentIdx);
-        fprintf(stderr, "currentSer %lu\n", currentSer);
+        //set the current number of steps to be the number of steps at the stepIdz for currentInt
+        cur.num_steps = steps[stepIdx];
 
         //have to determine if the tile puzzle is solved
         //assume that the puzzle is solved
@@ -155,6 +161,7 @@ int number_of_moves(struct game_state start)
                     {
                         solved = false;
                     }
+                    //if value is correct than move on
                     value++;
                 }
             }
@@ -166,6 +173,7 @@ int number_of_moves(struct game_state start)
             //free memory
             free(complete);
             free(steps);
+            //use free_list to free q.data
             free_list(q.data);
             //retunr the numver of moves made to get to solved
             return cur.num_steps;
@@ -175,6 +183,7 @@ int number_of_moves(struct game_state start)
         //moves in 4 direction
         int dir[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
+        //iniialze rows and cols
         int row = cur.empty_row;
         int col = cur.empty_col;
 
@@ -187,6 +196,7 @@ int number_of_moves(struct game_state start)
             //if it is out of bounds
             if (newRow < 0 || newRow >= 4 || newCol < 0 || newCol >= 4)
             {
+                //move on to next k
                 continue;
             }
             
@@ -202,18 +212,42 @@ int number_of_moves(struct game_state start)
             nextCur.empty_col = newCol;
 
             //seriable the next integer and set it to next
-            uint64_t nextSer = serialize(nextCur);
-            uint64_t nextIdx = nextSer % MAX;
+            uint64_t nextInt = serialize(nextCur);
+            //uint64_t nextIdx = nextInt % MAX;
 
-            if (nextIdx < 65536 && !complete[nextIdx])
+            //check to see if the file has already been seen
+            bool completeAlready = false;
+            for (size_t i = 0; i < completeCnt; i++)
             {
-                //incrmeent the num of moves taken to try to solve
-                steps[nextIdx] = cur.num_steps + 1;
-                enqueue(&q, nextCur);
+                //if the next inteerger has been seen
+                if(complete[i] == nextInt)
+                {
+
+                    //set to true 
+                    completeAlready = true;
+                    //end loop
+                    break;
+                }
             }
 
-            fprintf(stderr, "currentIdx %lu\n", nextIdx);
-            fprintf(stderr, "currentSer %lu\n", nextSer);
+            //if the tile hasnt been seen
+            if (!completeAlready)
+            {
+                //if the count is greater than the max
+                if (completeCnt >= MAX)
+                {
+                    //move on
+                    continue;
+                }
+            }
+
+            //track the steps to get to this tile
+            steps[completeCnt] = cur.num_steps + 1;
+            //mark the start as seen
+            complete[completeCnt++] = nextInt;
+            //add to BFS queue
+            //enqueue(&q, child);
+            enqueue(&q, nextCur);
         }
     }
     
@@ -221,6 +255,7 @@ int number_of_moves(struct game_state start)
     //free memory
     free(complete);
     free(steps);
+    //use free_list to free q.data memory
     free_list(q.data);
 
     //return -1 to insicate that the tile puzzle cannot be solved
