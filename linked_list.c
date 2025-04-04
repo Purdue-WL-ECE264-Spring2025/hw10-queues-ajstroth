@@ -38,10 +38,10 @@ void insert_at_head(struct linked_list *list, size_t value)
   //create a node os struct list_node
   struct list_node *node = new_node(value);
   //make sure that the node was made correctly
-  if (node == NULL || node == 0)
+  if (!node)
   {
     //check return value here
-    return NULL;
+    return;
   }
   //if node creation was successful
   //the created node is the current head since it should be instered there
@@ -55,12 +55,21 @@ void insert_at_tail(struct linked_list *list, size_t value)
   //create a node os struct list_node
   struct list_node *node = new_node(value);
   //make sure that the node was made correctly
-  if (node == NULL || node == 0)
+  if (node == NULL)
   {
+    fprintf(stderr, "failed to allocate new node\n");
+    fflush(stderr);
     //check return value here
-    return NULL;
+    return;
   }
   
+  if (list->head == NULL)
+  {
+    list->head = node;
+    fprintf(stderr, "inserted first node(head): %zu\n", value);
+    fflush(stderr);
+    return;
+  }
   //since tail is not a part of the structue like head is
   //have to find the last node
 
@@ -68,6 +77,7 @@ void insert_at_tail(struct linked_list *list, size_t value)
   //will start at the first not incase it is empty
   struct list_node *nodePtr = list->head;
 
+  /*
   //if the list is empty the new node made is both the tail and the head
   if (list->head == NULL || list->head == 0)
   {
@@ -75,8 +85,8 @@ void insert_at_tail(struct linked_list *list, size_t value)
     //but the head is a part of the structure so it is easier to set it to this value
     list->head = node;
     //check return value?????
-    return 0;
-  }
+    return;
+  }*/
 
   //if it is not empty have to find the last node
   //go through all the nodes in the list
@@ -92,11 +102,32 @@ void insert_at_tail(struct linked_list *list, size_t value)
   nodePtr->next = node;
 
   //check return value!!!!
-  return 0;
+  //return;
+
+  fprintf(stderr, "instered at tail: %zu\n", value);
+  fflush(stderr);
 }
 
 size_t remove_from_head(struct linked_list *list) 
 { 
+
+  if (list->head == NULL)
+  {
+    fprintf(stderr, "remove_from_head(): List is empty\n");
+    fflush(stderr);
+    return 0;
+  }
+
+  fprintf(stderr, "remove_from_head(): removing %zu\n", list);
+  fflush(stderr);
+
+  struct list_node *headNode = list->head;
+  size_t valueHead = headNode->value;
+  list->head = headNode->next;
+  free(headNode);
+  return valueHead;
+  
+  /*
   //find the current head of the list
   struct list_node *headNode = list->head;
 
@@ -115,7 +146,7 @@ size_t remove_from_head(struct linked_list *list)
   free(headNode);
 
   //return the head node value
-  return valueHead; 
+  return valueHead; */
 }
 
 size_t remove_from_tail(struct linked_list *list) 
@@ -131,6 +162,17 @@ size_t remove_from_tail(struct linked_list *list)
 
   //create node to keep lasy node so we van use ->next to get rid of the tial value
   struct list_node *ptrLast = NULL;
+
+  //opne element case
+  if (ptrLast == NULL)
+  {
+    //the head will be null
+    list->head = NULL;
+  }
+  else
+  {
+    ptrLast->next = NULL;
+  }
 
   //do the same traveralsal thing through the list to find the last value
   //if it is not empty have to find the last node
@@ -176,6 +218,8 @@ void free_list(struct linked_list list)
     //set the pointer to the next node
     nodePtr = nextPtr;
   }
+
+  return;
 }
 
 //GIVEN

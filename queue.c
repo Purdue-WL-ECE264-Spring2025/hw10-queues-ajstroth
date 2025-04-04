@@ -1,6 +1,9 @@
 #include "queue.h"
 #include "tile_game.h"
 
+#include <stdlib.h>
+
+
 //added here for easier reference
 /*struct queue {
     struct linked_list data;
@@ -10,7 +13,7 @@ void enqueue(struct queue *q, struct game_state state)
 {
     //inset at tail or head can use either
     //use serialize found in tile_game to transfrom into a integer
-    insert_at_tail(&q->data, serialize(state));
+    insert_at_tail(&q->data, (size_t)serialize(state));
 }
 
 struct game_state dequeue(struct queue *q) 
@@ -18,13 +21,23 @@ struct game_state dequeue(struct queue *q)
     //reomve tail or head use the one that is contrery to enqueue
     //thus will reomve head
     size_t remove = remove_from_head(&q->data);
+    if (remove == 0)
+    {
+        struct game_state invalid = {0};
+        return invalid; 
+    }
+
     //destialize the valye and then return it
+    fprintf(stderr, "Dequeing value : %zu\n", remove);
+    fflush(stderr);
     return deserialize(remove);
 }
 
 //find the minum number of moves to solve
 int number_of_moves(struct game_state start) 
-{ 
+{
+    fprintf(stderr, "straing number_of_moves\n");
+    fflush(stderr);
     //want to follow this structr BFS
     /*
     node bfs(graph g, node start, node search)
@@ -49,30 +62,34 @@ int number_of_moves(struct game_state start)
     //queue q = new_queue();
     struct queue q = {0};
 
-    //enqueue the starting game structure
-    //insert the start data ar the tail
+    //serialize the starting state 
+    uint64_t startSer = serialize(start);
+
+    //initial tracking things
+    //allocate memory for an array of bools to store if the tile has been moved
+    //did 16^4
+    bool *complete = calloc(65536, sizeof(bool));
+    uint64_t *steps = calloc(65536, sizeof(uint64_t));
+
+    //if memory allocation failrs
+    if (!complete || !steps)
+    {
+        free(complete);
+        free(steps);
+        return -1;
+    }
+
+    //enqueue(&q, child);
     enqueue(&q, start);
 
-    //allocate memory for an array of bools to store if the tile has been moved
-    bool *complete = malloc(sizeof(bool));
-    //check if allocation was successful
-    if (complete != NULL)
-    {
-        //if successful inisiaze each element to 0
-        //because ate the start nothing has been moved
-        for (int i = 0; i < 100; i++)
-        {
-            complete[i] = 0;
-        }
-    }
-    else
-    {
-        //if memory allocation fails
-        return NULL;
-    }
+    fprintf(stderr, "enqueued start state\n");
+    fflush(stderr);
+
+    //initiales step to 0
+    steps[startSer] = 0;
 
     //while (!empty(s))
-    while (!q.data.head)
+    while (q.data.head)
     {
         //node cur = dequeue(&q);
         //dequeue the current state
@@ -80,54 +97,125 @@ int number_of_moves(struct game_state start)
         //serilizate the current state
         size_t current = serialize(cur);
 
+        fprintf(stderr, "serilzed value: %zu\n", current);
+        fflush(stderr);
+
+        if (current >= 65536)
+        {
+            fprintf(stderr, "output bound serilzed value: %zu\n", current);
+            fflush(stderr);
+            continue;
+        }
+
         //test to see if the tile had already been seen or meoved
-        if (complete[current] == 0)
+        if (complete[current])
         {
             //if it has already been visited move to the next tile
             continue;
         }
 
         //mark the tile as being visited
-        complete[current] = 1;
+        complete[current] = true;
+        //update the numver of steps
+        cur.num_steps = steps[current];
 
-        //if (equals(cur, search))
-        if (solved???))
+        //have to determine if the tile puzzle is solved
+        //assume that the puzzle is solved
+        bool solved = true;
+        //expected value starts at 1
+        int value = 1;
+
+        //GOAL
+        //1 2 3 4 
+        //5 6 7 8
+        //9 10 11 12
+        //13 14 15 0
+
+
+        //go through tile puzzle
+        for (int i = 0; i < 4 && solved; i++)
+        {
+            for (int j = 0; j < 4 && solved; j++)
+            {
+                if (i == 3 && j == 3)
+                {
+                    //the bottom right corrent should be 0 and empty
+                    if (cur.tiles[i][j] != 0)
+                    {
+                        //if it not zero then it is not solved
+                        solved = false;
+                    }
+                }
+                else
+                {
+                    //the other tiles should be in the correct order
+                    if (cur.tiles[i][j] != value)
+                    {
+                        solved = false;
+                    }
+                }
+                value++;
+            }
+        }
+        
+        //if the tile puzzle haas been solved
+        if (solved)
         {
             //free memory
             free(complete);
-            free(q.data);
-            //return the number of moves to get to the current tile;
-            return current.num_moves;
+            free(steps);
+            free_list(q.data);
+            //retunr the numver of moves made to get to solved
+            return cur.num_steps;
         }
-        
-        //max 4 surronding tiles
-        struct game_state tile[4];
-        //children(cur)
-        //find a way to find the surronding tile and the empty way
-        
-        //for (node child in children(cur))
-        //go through each tile surronding
-        for (size_t i = 0; i < cnt; i++)
+
+
+        //moves in 4 direction
+        int dir[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+        int row = cur.empty_row;
+        int col = cur.empty_col;
+
+        //attempt to move each direction
+        for (int k = 0; k < 4; k++)
         {
-            //turn the tile into a interger with serialize
-            size_t tileInt = serialize(tile[i]);
-
-            if(!complete[tileInt])
+            int newRow = row + dir[k][0];
+            int newCol = col + dir[k][1];
+            
+            //if it is out of bounds
+            if (newRow < 0 || newRow >= 4 || newCol < 0 || newCol >= 4)
             {
-                //increasae the number of moves 
-                tile[i].num_moves = current.num_moves + 1;
-                //enqueue(&q, child);
-                //add to the tial and moves on 
-                enqueue(&q, tile[i]);
+                continue;
             }
+            
+            //create next state to modify to aboid actually changing the current state
+            struct game_state nextCur = cur;
 
+            //swap the 0 with the neighboring tile
+            nextCur.tiles[row][col] = nextCur.tiles[newRow][newCol];
+            nextCur.tiles[newRow][newCol] = 0;
+
+            //update the position of the blank tile o tile
+            nextCur.empty_row = newRow;
+            nextCur.empty_col = newCol;
+
+            //seriable the next integer and set it to next
+            uint64_t next = serialize(nextCur);
+
+            if (!complete[next])
+            {
+                //incrmeent the num of moves taken to try to solve
+                steps[next] = cur.num_steps + 1;
+                enqueue(&q, nextCur);
+            }
         }
     }
     
     //if no solution is found
     //free memory
     free(complete);
-    free(q.data);
+    free(steps);
+    free_list(q.data);
 
     //return -1 to insicate that the tile puzzle cannot be solved
     return -1;
