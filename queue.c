@@ -6,12 +6,6 @@
 #include <stdlib.h>
 
 
-//max number of states for consistent in number of moves
-
-#define MAX 1000000
-
-
-
 //added here for easier reference
 
 /*struct queue {
@@ -38,6 +32,7 @@ bool sameLayout(struct game_state *a, struct game_state *b)
 }
 
 //serialate the layout helper function
+//prevents serialize being called a tons and causing timeout
 uint64_t serializeLayout(struct game_state state)
 {
     //creates copu of num_steps
